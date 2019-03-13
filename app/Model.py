@@ -12,23 +12,24 @@ class Model:
         self.N = N
         self.speedLimit = v
 
-        self.deleteNumber = self.iniDeleteNumber(deleteNum)
+        self.deleteNumber = self.check_delete_num(deleteNum)
         self.sep = sep
 
-    def iniDeleteNumber(self, deleteNum) -> str:
-        if ( type(deleteNum) == type('str')):
-            return deleteNum
+    @staticmethod
+    def check_delete_num(delete_num) -> str:
+        if isinstance(delete_num, int):
+            return delete_num
 
-        return str(deleteNum)
+        return str(delete_num)
 
     def getDeleteNumber(self) -> str:
         return self.deleteNumber
 
     def setSpeedLimit(self, speedLimit):
-        self.speedLimit = speedLimit
+        self.speedLimit = int(speedLimit)
 
     def setDeleteNum(self, deleteNum):
-        self.deleteNumber = self.iniDeleteNumber( deleteNum )
+        self.deleteNumber = self.check_delete_num(deleteNum)
 
     def readCsv(self, file : str, names : list) -> pd.DataFrame:
         return pd.read_csv( file, sep= self.sep, engine="python", names=names)
@@ -58,16 +59,16 @@ class Model:
 
         with open(fileSave, 'w') as f:
             for i in range(refFrame.count()[0]):
-                u =     datFrame.at[i, 'U'].split(',')
-                v =     datFrame.at[i, 'V'].split(',')
-                w =     datFrame.at[i, 'W'].split(',')
-                db =    datFrame.at[i, 'Db'].split(',')
+                u = datFrame.at[i, 'U'].split(',')
+                v = datFrame.at[i, 'V'].split(',')
+                w = datFrame.at[i, 'W'].split(',')
+                db = datFrame.at[i, 'Db'].split(',')
 
                 item = refFrame.at[i, 'depth'].split(',')
                 speed = refFrame.at[i, 'speed']
 
 
-                if ( Validator.ValidLen( self.N, [ u, v, w, db]) == False):
+                if (Validator.ValidLen( self.N, [ u, v, w, db]) == False):
                     print("Skip row at line {} [{} {} {} {} | N = {}]".format(
                         i, len(u),len(v),len(w),len(db), self.N))
                     continue
@@ -93,3 +94,4 @@ class Model:
 
 
 
+        return  Validator.fileExist(fileSave)

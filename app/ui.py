@@ -5,7 +5,9 @@ from PyQt5 import uic
 
 from app.Template import Template
 from app.Validator import Validator
+
 from app.Model import Model
+
 class Ui (QMainWindow):
 
     parent = False
@@ -28,19 +30,22 @@ class Ui (QMainWindow):
         self.fileRef = QFileDialog.getOpenFileName(self, "Выберите ref файл")[0]
         self.fileData = QFileDialog.getOpenFileName(self, "Выберите data файл")[0]
 
-        if Validator.fileExist(self.fileRef) and Validator.fileExist(self.fileData):
-            QMessageBox.information(self, "Успешно", "Теперь можно настраивать ограничения")
+        QMessageBox.information(self, "Успешно", "Теперь можно настраивать ограничения")
 
 
     def Exec(self):
-        model = Model( deleteNum=int( self.ui.deleteLine.text() ), v=int( self.ui.speedLine.text() ))
+        model = Model( N=50 )
 
+        model.setDeleteNum(self.ui.deleteLine.text())
+        model.setSpeedLimit(self.ui.speedLine.text())
+
+        ret = False
         try:
-            model.fromTwoFiles( self.fileData, self.fileRef)
+            ret = model.fromTwoFiles( self.fileData, self.fileRef)
         except Exception as e:
             print(e)
 
-        if ( Validator.fileExist('ret.txt')):
+        if ( ret ):
             QMessageBox.information(self, "Успешно", "Операция успешно завершилась")
 
     def initUI(self):
