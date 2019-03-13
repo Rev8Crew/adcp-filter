@@ -15,6 +15,7 @@ class Ui (QMainWindow):
         super(Ui, self).__init__()
 
         self.parent = app
+        self.model = Model( N=50 )
         self.ui = uic.loadUi('MainWindow.ui', self)
 
         self.ui.openFile.clicked.connect( self.onOpenFile )
@@ -27,25 +28,26 @@ class Ui (QMainWindow):
 
     def onOpenFile(self):
         QMessageBox.information(self, "Файл", "Выберите сначала ref файл, а затем data")
-        self.fileRef = QFileDialog.getOpenFileName(self, "Выберите ref файл")[0]
-        self.fileData = QFileDialog.getOpenFileName(self, "Выберите data файл")[0]
 
+        fileRef = QFileDialog.getOpenFileName(self, "Выберите ref файл")[0]
+        fileData = QFileDialog.getOpenFileName(self, "Выберите data файл")[0]
+
+        self.model.set_two_files(fileData, fileRef)
         QMessageBox.information(self, "Успешно", "Теперь можно настраивать ограничения")
 
 
     def Exec(self):
-        model = Model( N=50 )
 
-        model.setDeleteNum(self.ui.deleteLine.text())
-        model.setSpeedLimit(self.ui.speedLine.text())
+        self.model.set_delete_num(self.ui.deleteLine.text())
+        self.model.set_speed_limit(self.ui.speedLine.text())
 
         ret = False
         try:
-            ret = model.fromTwoFiles( self.fileData, self.fileRef)
+            ret = self.model.from_two_files(self.fileData, self.fileRef)
         except Exception as e:
             print(e)
 
-        if ( ret ):
+        if (ret):
             QMessageBox.information(self, "Успешно", "Операция успешно завершилась")
 
     def initUI(self):

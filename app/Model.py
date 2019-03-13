@@ -2,18 +2,23 @@ import pandas as pd
 
 from .Validator import Validator
 
-class Model:
 
+class Model:
     N = 0
     deleteNumber = '-32768'
     sep = ',,'
 
-    def __init__(self, N = 50, deleteNum=-32768, v = 1, sep = ',,'):
-        self.N = N
+    def __init__(self, n=50, delete_num=-32768, v=1, sep=',,', average: int = 20):
+        self.N = n
         self.speedLimit = v
 
-        self.deleteNumber = self.check_delete_num(deleteNum)
+        self.deleteNumber = self.check_delete_num(delete_num)
         self.sep = sep
+
+        self.fileData = ""
+        self.fileRef = ""
+
+        self.average = average
 
     @staticmethod
     def check_delete_num(delete_num) -> str:
@@ -22,76 +27,72 @@ class Model:
 
         return str(delete_num)
 
-    def getDeleteNumber(self) -> str:
+    def get_delete_number(self) -> str:
         return self.deleteNumber
 
-    def setSpeedLimit(self, speedLimit):
-        self.speedLimit = int(speedLimit)
+    def set_average_num(self, num):
+        self.average = int(num)
 
-    def setDeleteNum(self, deleteNum):
-        self.deleteNumber = self.check_delete_num(deleteNum)
+    def set_speed_limit(self, speed_limit):
+        self.speedLimit = int(speed_limit)
 
-    def readCsv(self, file : str, names : list) -> pd.DataFrame:
-        return pd.read_csv( file, sep= self.sep, engine="python", names=names)
+    def set_delete_num(self, delete_num):
+        self.deleteNumber = self.check_delete_num(delete_num)
 
-    def setTwoFiles(self, fileData : str, fileRef : str) -> bool:
+    def read_file(self, file: str, names: list) -> pd.DataFrame:
+        return pd.read_csv(file, sep=self.sep, engine="python", names=names)
 
-        if Validator.fileExist(fileRef) and Validator.fileExist(fileData):
-            self.fileData = fileData
-            self.fileRef = fileRef
+    def set_two_files(self, file_data: str, file_ref: str) -> bool:
+
+        if Validator.fileExist(file_ref) and Validator.fileExist(file_data):
+            self.fileData = file_data
+            self.fileRef = file_ref
 
             return True
 
         return False
 
+    def from_two_files(self, file_data: str, file_ref: str, file_save='ret.txt'):
 
-    def fromTwoFiles(self, fileData : str, fileRef : str, fileSave : str = 'ret.txt'):
+        if Validator.fileExist(file_ref) is False:
+            raise FileExistsError("Файл[REF] '%s' не найден" % file_ref)
 
-        if ( Validator.fileExist(fileRef) == False ):
-            raise FileExistsError("Файл[REF] '%s' не найден" % fileRef)
+        if Validator.fileExist(file_data) is False:
+            raise FileExistsError("Файл[DATA] '%s' не найден" % file_data)
 
-        if ( Validator.fileExist(fileData) == False ):
-            raise FileExistsError("Файл[DATA] '%s' не найден" % fileData)
+        ref_frame = self.read_file(file_ref, ["id", "latitude", "longitude", "distance", "speed", "maxDepth", "depth"])
+        dat_frame = self.read_file(file_data, ['U', 'V', 'W', 'Db'])
 
+        with open(file_save, 'w') as f:
+            for i in range(ref_frame.count()[0]):
+                u = dat_frame.at[i, 'U'].split(',')
+                v = dat_frame.at[i, 'V'].split(',')
+                w = dat_frame.at[i, 'W'].split(',')
+                db = dat_frame.at[i, 'Db'].split(',')
 
-        refFrame = self.readCsv(fileRef, [ "id", "latitude", "longitude", "distance", "speed", "maxDepth", "depth"])
-        datFrame = self.readCsv(fileData, [ 'U', 'V', 'W', 'Db'])
+                item = ref_frame.at[i, 'depth'].split(',')
+                speed = ref_frame.at[i, 'speed']
 
-        with open(fileSave, 'w') as f:
-            for i in range(refFrame.count()[0]):
-                u = datFrame.at[i, 'U'].split(',')
-                v = datFrame.at[i, 'V'].split(',')
-                w = datFrame.at[i, 'W'].split(',')
-                db = datFrame.at[i, 'Db'].split(',')
-
-                item = refFrame.at[i, 'depth'].split(',')
-                speed = refFrame.at[i, 'speed']
-
-
-                if (Validator.ValidLen( self.N, [ u, v, w, db]) == False):
+                if Validator.ValidLen(self.N, [u, v, w, db]) is False:
                     print("Skip row at line {} [{} {} {} {} | N = {}]".format(
-                        i, len(u),len(v),len(w),len(db), self.N))
+                        i, len(u), len(v), len(w), len(db), self.N))
                     continue
 
-                if ( Validator.ValidSpeed(speed, self.speedLimit) == False ):
+                if Validator.ValidSpeed(speed, self.speedLimit) is False:
                     continue
-
 
                 for j in range(len(item)):
 
-                    if ( Validator.InvalidNumber(self.getDeleteNumber(), [ u[j],v[j], w[j], db[j]]) ):
+                    if Validator.InvalidNumber(self.get_delete_number(), [u[j], v[j], w[j], db[j]]):
                         continue
 
-                    print(refFrame.at[i, 'id'],
-                          refFrame.at[i, 'latitude'],
-                          refFrame.at[i, 'longitude'],
-                          refFrame.at[i, 'distance'],
+                    print(ref_frame.at[i, 'id'],
+                          ref_frame.at[i, 'latitude'],
+                          ref_frame.at[i, 'longitude'],
+                          ref_frame.at[i, 'distance'],
                           speed,
-                          refFrame.at[i, 'maxDepth'],
-                          item[j], u[j], v[j], w[j],db[j],
+                          ref_frame.at[i, 'maxDepth'],
+                          item[j], u[j], v[j], w[j], db[j],
                           file=f)
 
-
-
-
-        return  Validator.fileExist(fileSave)
+        return Validator.fileExist(file_save)
