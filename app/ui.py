@@ -15,7 +15,7 @@ class Ui (QMainWindow):
         super(Ui, self).__init__()
 
         self.parent = app
-        self.model = Model( N=50 )
+        self.model = Model(n=50)
         self.ui = uic.loadUi('MainWindow.ui', self)
 
         self.ui.openFile.clicked.connect( self.onOpenFile )
@@ -37,13 +37,13 @@ class Ui (QMainWindow):
 
 
     def Exec(self):
-
         self.model.set_delete_num(self.ui.deleteLine.text())
         self.model.set_speed_limit(self.ui.speedLine.text())
+        self.model.set_average_num(self.ui.averageLine.text())
 
         ret = False
         try:
-            ret = self.model.from_two_files(self.fileData, self.fileRef)
+            ret = self.model.from_two_files()
         except Exception as e:
             print(e)
 
