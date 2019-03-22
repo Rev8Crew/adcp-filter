@@ -53,19 +53,38 @@ class Model:
         return False
 
     def ini_average(self):
-        self.average_arr = list()
+        self.average_arr = {}
 
-    def add_to_average(self, u, v, w, db):
-        self.average_arr.append([ u, v, w, db])
+    @staticmethod
+    def get_key_round(key):
 
-    def get_average(self):
+
+        if isinstance(key, float):
+            return round(key)
+
+        if isinstance(key, str):
+            print('convert')
+            return int(float(key.strip()))
+
+        return int(key)
+
+    def add_to_average(self, key, u, v, w, db):
+        print(key, type(key))
+        key = self.get_key_round(key)
+        if key not in self.average_arr.keys():
+            self.average_arr[key] = [u, v, w, db]
+
+        self.average_arr[key].append([u, v, w, db])
+
+    def get_average(self, key):
+        key = self.get_key_round(key)
         u = 0
         v = 0
         w = 0
         db = 0
 
-        ln = len(self.average_arr)
-        for item in self.average_arr:
+        ln = len(self.average_arr[key])
+        for item in self.average_arr[key]:
             u += float(item[0]) / ln
             v += float(item[1]) / ln
             w += float(item[2]) / ln
@@ -111,6 +130,10 @@ class Model:
         dat_frame = self.read_file(file_data, ['U', 'V', 'W', 'Db'])
 
         with open(file_save, 'w') as f:
+            self.ini_average()
+            count = 0
+
+            file_count = 0
             for i in range(ref_frame.count()[0]):
                 u = dat_frame.at[i, 'U'].split(',')
                 v = dat_frame.at[i, 'V'].split(',')
@@ -128,32 +151,37 @@ class Model:
                 if Validator.ValidSpeed(speed, self.speedLimit) is False:
                     continue
 
-                count = 0
-                self.ini_average()
                 for j in range(len(item)):
 
                     if Validator.InvalidNumber(self.get_delete_number(), [u[j], v[j], w[j], db[j]]):
                         continue
 
-                    if self.average == 0:
-                        self.print_to_file(i, ref_frame, u[j], v[j], w[j], db[j], f, True)
+                    if self.average:
+                        #item[j] - глубина
+                        self.add_to_average(item[j], u[j], v[j], w[j], db[j])
                     else:
-                        count += 1
-                        self.add_to_average(u[j], v[j], w[j], db[j])
+                        self.print_to_file(i, ref_frame, u[j], v[j], w[j], db[j], f, True)
 
-                    if count == self.average and self.average:
-                        final_array = self.get_average()
+                count += 1
 
-                        self.print_to_file(i, ref_frame, final_array[0], final_array[1],
+                if count == self.average and self.average:
+                    file_count += 1
+
+                    final_array = list([0, 0, 0, 0])
+                    for j in range(len(item)):
+                        final_array = self.get_average(item[j])
+                        self.print_to_file(file_count, ref_frame, final_array[0], final_array[1],
                                            final_array[2], final_array[3], f)
 
-                        count = 0
-                        self.ini_average()
+                    count = 0
+                    self.ini_average()
 
-                if count:
-                    final_array = self.get_average()
+            if count:
+                file_count += 1
 
-                    self.print_to_file(i, ref_frame, final_array[0], final_array[1],
+                for j in range(len(item)):
+                    final_array = self.get_average(item[j])
+                    self.print_to_file(file_count, ref_frame, final_array[0], final_array[1],
                                        final_array[2], final_array[3], f)
 
         return Validator.fileExist(file_save)
