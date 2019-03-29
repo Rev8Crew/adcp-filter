@@ -63,16 +63,14 @@ class Model:
             return round(key)
 
         if isinstance(key, str):
-            print('convert')
             return int(float(key.strip()))
 
         return int(key)
 
     def add_to_average(self, key, u, v, w, db):
-        print(key, type(key))
         key = self.get_key_round(key)
         if key not in self.average_arr.keys():
-            self.average_arr[key] = [u, v, w, db]
+            self.average_arr[key] = [[u, v, w, db]]
 
         self.average_arr[key].append([u, v, w, db])
 
@@ -96,8 +94,8 @@ class Model:
     def print_to_file(i, ref_frame, u, v, w, db, f, print_depth=False):
         depth = ref_frame.at[i, 'maxDepth']
 
-        if print_depth is False:
-            depth = ''
+        if print_depth:
+            depth = print_depth
 
         def print_float_count(fl):
             return float("{0:.3f}".format(fl)) if isinstance(fl, float) else "{}".format(fl)
@@ -177,11 +175,10 @@ class Model:
                     self.ini_average()
 
             if count:
-                file_count += 1
-
+                final_array = list([0, 0, 0, 0])
                 for j in range(len(item)):
                     final_array = self.get_average(item[j])
                     self.print_to_file(file_count, ref_frame, final_array[0], final_array[1],
-                                       final_array[2], final_array[3], f)
+                                       final_array[2], final_array[3], f, item[j])
 
         return Validator.fileExist(file_save)
