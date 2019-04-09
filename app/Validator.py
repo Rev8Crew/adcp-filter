@@ -1,4 +1,4 @@
-from pathlib import Path
+import os
 
 class Validator:
 
@@ -29,4 +29,4 @@ class Validator:
 
     @staticmethod
     def fileExist( filePath : str):
-        return Path(filePath).is_file()
+        return os.path.exists(filePath)

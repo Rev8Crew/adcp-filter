@@ -58,7 +58,6 @@ class Model:
     @staticmethod
     def get_key_round(key):
 
-
         if isinstance(key, float):
             return round(key)
 
@@ -71,18 +70,25 @@ class Model:
         key = self.get_key_round(key)
         if key not in self.average_arr.keys():
             self.average_arr[key] = [[u, v, w, db]]
+            return;
 
         self.average_arr[key].append([u, v, w, db])
 
     def get_average(self, key):
         key = self.get_key_round(key)
+
+        if key not in self.average_arr.keys():
+            return False
+
         u = 0
         v = 0
         w = 0
         db = 0
 
         ln = len(self.average_arr[key])
+
         for item in self.average_arr[key]:
+
             u += float(item[0]) / ln
             v += float(item[1]) / ln
             w += float(item[2]) / ln
@@ -129,16 +135,26 @@ class Model:
 
         with open(file_save, 'w') as f:
             self.ini_average()
+
+            #Для подсчета осреднения
             count = 0
 
+            # Номер который будет записан в файле если есть осреднение
             file_count = 0
             for i in range(ref_frame.count()[0]):
+
+                # Компонента потока U
                 u = dat_frame.at[i, 'U'].split(',')
+                # Компонента потока V
                 v = dat_frame.at[i, 'V'].split(',')
+                # Компонента потока W
                 w = dat_frame.at[i, 'W'].split(',')
+                # Уровень сигнала
                 db = dat_frame.at[i, 'Db'].split(',')
 
+                # Разбиение по глубине
                 item = ref_frame.at[i, 'depth'].split(',')
+                # Фильтр по скорости лодки
                 speed = ref_frame.at[i, 'speed']
 
                 if Validator.ValidLen(self.N, [u, v, w, db]) is False:
@@ -149,36 +165,49 @@ class Model:
                 if Validator.ValidSpeed(speed, self.speedLimit) is False:
                     continue
 
+                # Для каждой ячейки глубины
                 for j in range(len(item)):
 
                     if Validator.InvalidNumber(self.get_delete_number(), [u[j], v[j], w[j], db[j]]):
                         continue
 
+                    # Если задано усреднение то добавляем текущие значения компонентов потока U, V, W, DB
+                    # Если не задано то записываем в файл сразу
+
                     if self.average:
                         #item[j] - глубина
                         self.add_to_average(item[j], u[j], v[j], w[j], db[j])
                     else:
-                        self.print_to_file(i, ref_frame, u[j], v[j], w[j], db[j], f, True)
+                        self.print_to_file(i, ref_frame, u[j], v[j], w[j], db[j], f)
 
                 count += 1
 
                 if count == self.average and self.average:
-                    file_count += 1
-
+                    #Осредненные компоненты
                     final_array = list([0, 0, 0, 0])
                     for j in range(len(item)):
                         final_array = self.get_average(item[j])
-                        self.print_to_file(file_count, ref_frame, final_array[0], final_array[1],
-                                           final_array[2], final_array[3], f)
 
+                        if final_array is False:
+                            continue
+
+                        self.print_to_file(file_count * self.average, ref_frame, final_array[0], final_array[1],
+                                           final_array[2], final_array[3], f, print_depth=item[j])
+
+                    file_count += 1
                     count = 0
                     self.ini_average()
 
-            if count:
+            if count and self.average:
+                # Осредненные компоненты
                 final_array = list([0, 0, 0, 0])
                 for j in range(len(item)):
                     final_array = self.get_average(item[j])
-                    self.print_to_file(file_count, ref_frame, final_array[0], final_array[1],
-                                       final_array[2], final_array[3], f, item[j])
+
+                    if final_array is False:
+                        continue
+
+                    self.print_to_file(file_count * self.average, ref_frame, final_array[0], final_array[1],
+                                       final_array[2], final_array[3], f, print_depth=item[j])
 
         return Validator.fileExist(file_save)

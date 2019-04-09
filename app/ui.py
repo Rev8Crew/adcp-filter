@@ -44,8 +44,8 @@ class Ui (QMainWindow):
         ret = False
         try:
             ret = self.model.from_two_files()
-        except Exception as e:
-            print(e)
+        except BaseException as e:
+            print(str(e))
 
         if (ret):
             QMessageBox.information(self, "Успешно", "Операция успешно завершилась")
