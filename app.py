@@ -1,13 +1,21 @@
-from app.Model import Model
+import sys
+from PyQt5.QtWidgets import QApplication
+
 from app.ui import Ui
 
-from PyQt5 import QtWidgets
+ORGANIZATION_NAME = 'ADCP App'
+ORGANIZATION_DOMAIN = 'empty.com'
+APPLICATION_NAME = 'QSettings program'
 
-qApp = QtWidgets.QApplication([])
+from PyQt5.QtCore import QCoreApplication
 
-ui = Ui()
-qApp.exec()
+if __name__ == '__main__':
+    QCoreApplication.setApplicationName(ORGANIZATION_NAME)
+    QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
+    QCoreApplication.setApplicationName(APPLICATION_NAME)
 
+    app = QApplication(sys.argv)
 
-#model = Model()
-#model.fromTwoFiles('data.TXT', 'ref.TXT')
+    ui = Ui(app)
+
+    sys.exit(app.exec_())

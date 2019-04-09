@@ -3,6 +3,8 @@ from PyQt5.QtGui import QIcon
 
 from PyQt5 import uic
 
+from PyQt5.QtCore import QSettings
+
 from app.Template import Template
 from app.Validator import Validator
 
@@ -11,29 +13,55 @@ from app.Model import Model
 class Ui (QMainWindow):
 
     parent = False
-    def __init__(self, app):
+    def __init__(self, app:QApplication):
         super(Ui, self).__init__()
 
         self.parent = app
+
         self.model = Model(n=50)
         self.ui = uic.loadUi('MainWindow.ui', self)
 
-        self.ui.openFile.clicked.connect( self.onOpenFile )
-        self.ui.exec.clicked.connect( self.Exec )
+        self.ui.openFile.clicked.connect(self.onOpenFile)
+        self.ui.exec.clicked.connect(self.Exec)
+
+        self.ui.center()
+        self.ui.setWindowIcon(QIcon('web.jpg'))
+
+        self.init_menu()
+        self.statusBar().showMessage('Готов к работе...')
+
         self.show()
-        #self.initUI()
 
     menuActions = {}
     menuSubActions = {}
 
     def onOpenFile(self):
+        self.statusBar().showMessage('Выберите файл...')
+        settings = QSettings()
+
+        ref = settings.value( 'settings/ref', '', type=str)
+        data = settings.value( 'settings/data', '', type=str)
+
+        if Validator.fileExist(ref) and Validator.fileExist(data):
+            question = QMessageBox.question( self, 'Кэш', 'Использовать прошлые файлы, чтобы не выбирать новые? \n{}\n{}'.format(ref,data), QMessageBox.Yes| QMessageBox.No)
+
+            if question == QMessageBox.Yes:
+                self.model.set_two_files(data, ref)
+                return QMessageBox.information(self, "Успешно", "Теперь можно настраивать ограничения")
+
         QMessageBox.information(self, "Файл", "Выберите сначала ref файл, а затем data")
 
         fileRef = QFileDialog.getOpenFileName(self, "Выберите ref файл")[0]
         fileData = QFileDialog.getOpenFileName(self, "Выберите data файл")[0]
 
+        if Validator.fileExist(fileRef) is False or Validator.fileExist(fileData) is False:
+            return QMessageBox.warning(self, 'Ошибка', 'Вы не выбрали файл или его не существует')
+
+        settings.setValue('settings/ref', fileRef)
+        settings.setValue('settings/data', fileData)
+
         self.model.set_two_files(fileData, fileRef)
-        QMessageBox.information(self, "Успешно", "Теперь можно настраивать ограничения")
+        return QMessageBox.information(self, "Успешно", "Теперь можно настраивать ограничения")
 
 
     def Exec(self):
@@ -49,36 +77,16 @@ class Ui (QMainWindow):
 
         if (ret):
             QMessageBox.information(self, "Успешно", "Операция успешно завершилась")
+            self.statusBar().showMessage('Операция успешно завершена')
+        else:
+            self.statusBar().showMessage('Произошла ошибка')
 
-    def initUI(self):
-        self.statusBar().showMessage("Ready...")
 
-        self.resize(640, 480)
-        self.center()
-        self.setWindowIcon(QIcon('web.jpg'))
+    def init_menu(self):
+        self.ui.addMenuMain("Файл")
+        self.ui.AddMenuSub("Файл", "Выход", "exit.png", "close")
 
-        self.addMenuMain("Файл")
-        self.AddMenuSub("Файл", "Открыть файл", "open.png", self.FileDialog)
-        self.AddMenuSub("Файл", "Выход", "exit.png", "close")
-
-        self.addMenuMain("Шаблон")
-        self.AddMenuSub("Шаблон", "Создать шаблон", "open.png", self.FileDialog)
-        self.AddMenuSub("Шаблон", "Загрузить шаблон", "exit.png", "close")
-
-        self.addMenuMain("Настройки")
-
-        self.setWindowTitle("Главное Окно")
-
-        self.template = Template(self)
-
-        self.textEdit = QTextEdit()
-        self.textEdit.setFontPointSize(16)
-        self.setCentralWidget(self.textEdit)
-
-        self.show()
-
-    def getTextEdit(self) -> QTextEdit:
-        return self.textEdit
+        self.setWindowTitle("ADCP. Главное окно")
 
     def AddMenuSep(self, name):
         self.menuActions[name].addSeparator()
@@ -95,9 +103,6 @@ class Ui (QMainWindow):
             self.menuSubActions[name].triggered.connect(connect)
 
         self.menuActions[mainPoint].addAction(self.menuSubActions[name])
-
-    def FileDialog(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file')
 
     def center(self):
         qr = self.frameGeometry()
