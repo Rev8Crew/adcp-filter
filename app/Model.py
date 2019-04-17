@@ -56,6 +56,26 @@ class Model:
         self.average_arr = {}
 
     @staticmethod
+    def lineplot(x_data, y_data, x_label="", y_label="", title=""):
+
+        import matplotlib.pyplot as plt
+
+        # Create the plot object
+        _, ax = plt.subplots()
+
+        # Plot the best fit line, set the linewidth (lw), color and
+        # transparency (alpha) of the line
+        ax.plot(x_data, y_data, lw=2, color='#539caf', alpha=1)
+
+        # Label the axes and provide a title
+        ax.set_title(title)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+
+        plt.show()
+
+
+    @staticmethod
     def get_key_round(key):
 
         if isinstance(key, float):
@@ -113,6 +133,46 @@ class Model:
               ref_frame.at[i, 'speed'],
               depth, print_float_count(u), print_float_count(v), print_float_count(w), print_float_count(db),
               file=f)
+
+    def get_real_vector(self, file='ret.txt'):
+
+        import math
+        dat_frame = pd.read_csv(file, sep=' ', names=['id', 'lat', 'long', 'dist', 'speed', 'depth', 'u', 'v', 'w', 'db' ])
+
+        print(dat_frame)
+
+        d = {}
+        dept = {}
+        for i in range(dat_frame.count()[0]):
+            dist = dat_frame.at[i, 'dist']
+            speed = dat_frame.at[i, 'speed']
+            depth = dat_frame.at[i, 'depth']
+
+            u = float(dat_frame.at[i, 'u'])
+            v = float(dat_frame.at[i, 'v'])
+            w = float(dat_frame.at[i, 'w'])
+            db = float(dat_frame.at[i, 'db'])
+
+            if dist not in d.keys():
+                angle = 0
+
+                if u > 1.0 and v > 1.0:
+                    angle = math.atan( v / u)
+                elif u > 1.0 and v < 1.0:
+                    angle = 90.0 + math.atan( abs(v) / u)
+                elif u < 1.0 and v < 1.0:
+                    angle = 180.0 + math.atan(abs(v) / abs(u))
+                elif u < 1.0 and v > 1.0:
+                    angle = 270.0 + math.atan(v / abs(u))
+
+                d[dist] = [math.sqrt( u** 2 + v** 2), angle]
+                dept[depth] = [math.sqrt(u ** 2 + v ** 2), angle]
+
+        for item in d.keys():
+            print("{}: Real:[{}] | Angle:[{}]".format(item, d[item][0], d[item][1]))
+
+        self.lineplot( d.keys(), [d[x][0] for x in d.keys()] , "Distance", "Speed", "Real components")
+        self.lineplot(dept.keys(), [d[x][0] for x in dept.keys()], "depth", "Speed", "Real components")
 
     def from_two_files(self, file_data: str = '', file_ref: str = '', file_save='ret.txt'):
 
@@ -210,4 +270,5 @@ class Model:
                     self.print_to_file(file_count * self.average, ref_frame, final_array[0], final_array[1],
                                        final_array[2], final_array[3], f, print_depth=item[j])
 
+        self.get_real_vector()
         return Validator.fileExist(file_save)
