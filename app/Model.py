@@ -72,7 +72,7 @@ class Model:
         # transparency (alpha) of the line
         #ax.plot(x_data, y_data, lw=2, color='#539caf', alpha=1)
 
-        df.plot(x='dist', y=['depth', 'speed'], kind='area', stacked=False)
+        df.plot(x='dist', y=['depth', 'speed'], kind='area')
 
         # Label the axes and provide a title
         #ax.set_title(title)
