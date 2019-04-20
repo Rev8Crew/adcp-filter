@@ -1,8 +1,6 @@
 import pandas as pd
 import math
 
-import scipy
-
 from .Validator import Validator
 
 
@@ -113,7 +111,6 @@ class Model:
         db = 0
 
         ln = len(self.average_arr[key])
-
         for item in self.average_arr[key]:
 
             u += float(item[0]) / ln
@@ -131,14 +128,14 @@ class Model:
             print('Zero:', v, u)
             return 0
 
-        if u > 1.0 and v > 1.0:
-            angle = math.atan(v / u)
-        elif u > 1.0 and v < 1.0:
-            angle = 90.0 + math.atan(abs(v) / u)
-        elif u < 1.0 and v < 1.0:
-            angle = 180.0 + math.atan(abs(v) / abs(u))
-        elif u < 1.0 and v > 1.0:
-            angle = 270.0 + math.atan(v / abs(u))
+        if u > 0.0 and v > 0.0:
+            angle = math.atan(u / v) / 0.0175
+        elif u > 0.0 and v < 0.0:
+            angle = 90.0 + math.atan(abs(v) / u) / 0.0175
+        elif u < 0.0 and v < 0.0:
+            angle = 180.0 + math.atan(abs(u) / abs(v)) / 0.0175
+        elif u < 0.0 and v > 0.0:
+            angle = 270.0 + math.atan(v / abs(u)) / 0.0175
 
         return angle
 
@@ -162,7 +159,7 @@ class Model:
               ref_frame.at[i, 'longitude'],
               ref_frame.at[i, 'distance'],
               ref_frame.at[i, 'speed'],
-              depth, print_float_count(u), print_float_count(v), print_float_count(w), print_float_count(db),
+              depth, u, v, w, print_float_count(db),
               file=f)
 
     def get_real_vector(self, file='ret.txt'):
@@ -218,6 +215,8 @@ class Model:
 
         ref_frame = self.read_file(file_ref, ["id", "latitude", "longitude", "distance", "speed", "maxDepth", "depth"])
         dat_frame = self.read_file(file_data, ['U', 'V', 'W', 'Db'])
+
+        print(self.speedLimit)
 
         with open(file_save, 'w') as f:
             self.ini_average()
